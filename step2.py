@@ -1,3 +1,4 @@
+# Imports and setup
 import os
 import requests
 import json
@@ -124,7 +125,6 @@ class SeasonService:
             season = "Unknown"
             planting = "Season-appropriate planting recommended"
 
-            # Monsoon logic for Indian subcontinent (rough guideline: June to September)
             is_tropical_region = country.lower() in ["india", "bangladesh", "sri lanka", "nepal", "pakistan"]
             if is_tropical_region and month in [6, 7, 8, 9]:
                 season = "Rainy"
@@ -176,7 +176,7 @@ class SeasonService:
             "new york": (40.7128, -74.0060),
             "sydney": (-33.8688, 151.2093)
         }
-        return coordinates.get(city.lower(), (26.8467, 80.9462))  # Default to Lucknow
+        return coordinates.get(city.lower(), (26.8467, 80.9462))
 
 class PlantRecommendationSystem:
     def __init__(self, weatherapi_key: str, gemini_api_key: str):
@@ -220,7 +220,7 @@ class PlantRecommendationSystem:
                 Plant: [Plant Name]
                 Reason: [Why this plant is suitable for these conditions]
                 Care: [Basic care instructions]
-                """
+            """
         )
         self.parser = PlantRecommendationParser()
 
@@ -233,10 +233,13 @@ class PlantRecommendationSystem:
             land_coverage.plant_coverage +
             land_coverage.building_coverage +
             land_coverage.road_coverage +
-            land_coverage.empty_land
+            land_coverage.empty_land +
+            land_coverage.water_body
         )
         if abs(total_coverage - 100) > 1:
-            return {"error": "Land coverage percentages must sum to 100%"}
+            return {"error": "Land coverage percentages must sum to 100%", "coverage": total_coverage}
+
+        # location
 
         latitude, _ = SeasonService.get_location_coordinates(city, country)
         season_data = SeasonService.determine_season(
@@ -256,6 +259,7 @@ class PlantRecommendationSystem:
             building_coverage=land_coverage.building_coverage,
             road_coverage=land_coverage.road_coverage,
             empty_land=land_coverage.empty_land,
+            water_body=land_coverage.water_body,
             city=city,
             country=country,
             season=season_data.season,
@@ -273,52 +277,80 @@ class PlantRecommendationSystem:
         except Exception as e:
             return {"error": f"Error generating recommendations: {str(e)}"}
 
+# ✅ Final function with response format
 def generate_final_report(coverage_details: Dict) -> Dict:
     WEATHERAPI_KEY = os.getenv('WEATHERAPI_KEY')
     GEMINI_API_KEY = os.getenv('GOOGLE_API_KEY')
 
     if not WEATHERAPI_KEY or not GEMINI_API_KEY:
-        print("Missing API keys. Please set WEATHERAPI_KEY and GEMINI_API_KEY in your .env file.")
         return {
             "status": "error",
-            "message": "API keys not found. Please set WEATHERAPI_KEY and GEMINI_API_KEY in your .env file.",
-            "result": None,
+            "message": "API keys not found. Please set WEATHERAPI_KEY and GOOGLE_API_KEY in your .env file.",
+            "response": None,
         }
 
     if not coverage_details:
         return {
             "status": "error",
-            "message": "No coverage details provided.",
-            "result": None,
+            "message": "Coverage details not provided.",
+            "response": None,
         }
 
-    plant_system = PlantRecommendationSystem(WEATHERAPI_KEY, GEMINI_API_KEY)
+    try:
+        land_coverage = LandCoverageData(
+            plant_coverage=coverage_details.get("plant_coverage", 0.0),
+            building_coverage=coverage_details.get("building_coverage", 0.0),
+            road_coverage=coverage_details.get("road", 0.0),
+            empty_land=coverage_details.get("empty_land", 0.0),
+            water_body=coverage_details.get("water_body", 0.0),
+        )
 
-    land_coverage = LandCoverageData(
-        plant_coverage= coverage_details["plant_coverage"],
-        building_coverage= coverage_details["building_coverage"],
-        road_coverage= coverage_details["road"],
-        empty_land= coverage_details["empty_land"],
-        water_body=coverage_details["water_body"]
-    )
+        total_coverage = (
+            land_coverage.plant_coverage +
+            land_coverage.building_coverage +
+            land_coverage.road_coverage +
+            land_coverage.empty_land +
+            land_coverage.water_body
+        )
 
-    city = "Lucknow"
-    country = "India"
+        if abs(total_coverage - 100) > 1:
+            return {
+                "status": "error",
+                "message": f"Land coverage percentages must sum to 100%. Provided sum: {total_coverage}%",
+                "response": None,
+            }
 
-    print(f"Getting plant recommendations for {city}, {country}...")
-    results = plant_system.get_plant_recommendations(city, land_coverage, country)
+        plant_system = PlantRecommendationSystem(WEATHERAPI_KEY, GEMINI_API_KEY)
+        results = plant_system.get_plant_recommendations("Lucknow", land_coverage, "India")
 
-    if "error" in results:
+        if "error" in results:
+            return {
+                "status": "error",
+                "message": results["error"],
+                "response": None,
+            }
+
+        return {
+            "status": "success",
+            "message": "Plant recommendations generated successfully.",
+            "response": results,
+        }
+
+    except Exception as e:
         return {
             "status": "error",
-            "message": results["error"],
-            "result": None,
+            "message": f"Unexpected error: {str(e)}",
+            "response": None,
         }
 
-    return {
-        "status": "success",
-        "message": "Plant recommendations generated successfully.",
-        "result": results,
-    }
-# if __name__ == "__main__":
-#     main()
+# # ✅ Example usage
+# example_coverage_details = {
+#     "plant_coverage": 30.0,
+#     "building_coverage": 40.0,
+#     "road": 20.0,
+#     "empty_land": 5.0,
+#     "water_body": 5.0
+# }
+
+# generate_final_result = generate_final_report(example_coverage_details)
+# print(generate_final_result)
