@@ -2,7 +2,7 @@ import requests
 from dotenv import load_dotenv
 import os
 
-def download_static_map(latitude, longitude, zoom=18, size="640x640", file_path="static_map.png"):
+def download_static_map(latitude, longitude, zoom=19, size="640x640"):
     """
     Downloads a static map image from Google Maps Static API.
 
@@ -18,6 +18,7 @@ def download_static_map(latitude, longitude, zoom=18, size="640x640", file_path=
     Returns:
         dict: Result with status, message, and file_path.
     """
+    
     load_dotenv()
     api_key = os.getenv("GOOGLE_MAPS_API_KEY")
 
@@ -28,7 +29,8 @@ def download_static_map(latitude, longitude, zoom=18, size="640x640", file_path=
         f"https://maps.googleapis.com/maps/api/staticmap?"
         f"center={latitude},{longitude}&zoom={zoom}&size={size}&maptype={"satellite"}&key={api_key}"
     )
-
+    os.makedirs("files", exist_ok=True)
+    file_path = f"files/static_map-{latitude}-{longitude}.png"
     response = requests.get(url)
     if response.status_code == 200:
         with open(file_path, "wb") as f:
@@ -46,6 +48,6 @@ def download_static_map(latitude, longitude, zoom=18, size="640x640", file_path=
         }
 
 
-result = download_static_map(25.5941, 85.1376, file_path="static_map.png")
-print(result)
+# result = download_static_map(25.5941, 85.1376, file_path="static_map.png")
+# print(result)
 # This will download a static map centered at the specified latitude and longitude, save it as 'static_map.png', and print the result.
