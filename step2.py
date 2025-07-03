@@ -344,7 +344,7 @@ def generate_final_report(coverage_details: Dict) -> Dict:
         }
 
 # # ✅ Example usage
-example_coverage_details = {'vegetation_coverage': 7.0, 'building_coverage': 72.0, 'road_coverage': 12.0, 'empty_land': 3.0, 'water_body': 6.0}
+# example_coverage_details = {'vegetation_coverage': 7.0, 'building_coverage': 72.0, 'road_coverage': 12.0, 'empty_land': 3.0, 'water_body': 6.0}
 
-generate_final_result = generate_final_report(example_coverage_details)
-print(generate_final_result)
+# generate_final_result = generate_final_report(example_coverage_details)
+# print(generate_final_result)
