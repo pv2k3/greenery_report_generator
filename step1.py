@@ -59,7 +59,7 @@ def extract_json_from_caption(caption):
         raise RuntimeError(f"Error extracting JSON: {e}")
 
 def generate_coverage_details():
-    image_path = r"C:/Users/Lenovo/OneDrive/Pictures/Screenshots/Screenshot 2025-07-02 032652.png"
+    image_path = r"D:\WORK SELF\hack4bihar\static_map.png"
     prompt = """From this image, estimate the land coverage percentages and return the result in valid JSON format. The JSON must match the following schema:
 {
   "plant_coverage": float,
@@ -87,5 +87,5 @@ Only return the JSON object. Do not include any explanation or extra text. All v
         }
 
 # Example usage:
-# result = generate_coverage_details()
-# print(result)
+result = generate_coverage_details()
+print(result)

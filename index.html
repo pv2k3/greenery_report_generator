@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Azure Maps - My Location + Manual Input</title>
+    <meta charset="utf-8" />
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.js"></script>
+    <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.css" />
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        #myMap {
+            height: 100vh;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="controls">
+        <button onclick="goToMyLocation()">📍 Go to My Location</button><br><br>
+        <label>Latitude: <input type="number" id="latInput" step="0.0001" /></label><br>
+        <label>Longitude: <input type="number" id="lonInput" step="0.0001" /></label><br>
+        <button onclick="goToManualLocation()">📌 Go to Entered Location</button>
+    </div>
+
+    <div id="myMap"></div>
+
+    <script>
+        const subscriptionKey = '111c5NSZRcJFsjwfipyQsYpYlxkoOYspGjKFYPh3TITPNHocZXiHJQQJ99BGACi5YpzwpxzWAAAgAZMP1gzl'; // Replace with your actual key
+
+        var map = new atlas.Map('myMap', {
+            center: [0, 0],
+            zoom: 2,
+            style: 'satellite',
+            authOptions: {
+                authType: 'subscriptionKey',
+                subscriptionKey: subscriptionKey
+            }
+        });
+
+        let marker;
+
+        map.events.add('ready', function () {
+            // Initial marker
+            marker = new atlas.HtmlMarker({ position: [0, 0], visible: false });
+            map.markers.add(marker);
+        });
+
+        function goToMyLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    const lon = position.coords.longitude;
+                    const lat = position.coords.latitude;
+                    setLocation(lat, lon);
+                }, function (error) {
+                    alert("Error getting location: " + error.message);
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function goToManualLocation() {
+            const lat = parseFloat(document.getElementById('latInput').value);
+            const lon = parseFloat(document.getElementById('lonInput').value);
+
+            if (!isNaN(lat) && !isNaN(lon)) {
+                setLocation(lat, lon);
+            } else {
+                alert("Please enter valid latitude and longitude.");
+            }
+        }
+
+        function setLocation(lat, lon) {
+            const coords = [lon, lat];
+            map.setCamera({
+                center: coords,
+                zoom: 19  // or 20, for high detail
+            });
+
+
+            marker.setOptions({
+                position: coords,
+                visible: true,
+                text: '📍'
+            });
+        }
+    </script>
+</body>
+
+</html>
