@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cesium Globe with Pin Point & Search</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.112/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.112/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        #cesiumContainer {
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: block;
+        }
+        #pinButton {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<button id="pinButton">Activate Pin Point</button>
+<div id="cesiumContainer"></div>
+
+<script>
+    // Step 1: Paste your Cesium Ion Access Token here
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2MjQ4N2I5Yy1jNTc5LTQ5NWQtOTJlZS01MDc3ZGQ5NDhmNTciLCJpZCI6MzE3NTI5LCJpYXQiOjE3NTE1Njk4NjR9.oKIDY7FR2qQo_3t7hvti1Q1N3sBKNMeroAJ8vQaW-Vw';
+
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+        shouldAnimate: true,
+        geocoder: true, // Search Bar
+        baseLayerPicker: true, // Allows switching imagery
+        sceneModePicker: true, // 2D/3D toggle
+        timeline: false,
+        animation: false
+    });
+
+    let pinMode = false;
+
+    document.getElementById('pinButton').addEventListener('click', () => {
+        pinMode = true;
+        alert("Pin Point Mode Activated! Click on the globe.");
+    });
+
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+    handler.setInputAction(function(click) {
+        if (pinMode) {
+            const cartesian = viewer.scene.pickPosition(click.position);
+            if (Cesium.defined(cartesian)) {
+                const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                const lat = Cesium.Math.toDegrees(cartographic.latitude).toFixed(6);
+                const lon = Cesium.Math.toDegrees(cartographic.longitude).toFixed(6);
+
+                // Place Marker
+                viewer.entities.add({
+                    position: Cesium.Cartesian3.fromDegrees(lon, lat),
+                    point: {
+                        pixelSize: 10,
+                        color: Cesium.Color.RED
+                    },
+                    label: {
+                        text: `Lat: ${lat}\nLon: ${lon}`,
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                        pixelOffset: new Cesium.Cartesian2(0, -15)
+                    }
+                });
+
+                alert(`Coordinates:\nLatitude: ${lat}\nLongitude: ${lon}`);
+                pinMode = false;
+            }
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+</script>
+
+</body>
+</html>
