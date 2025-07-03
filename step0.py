@@ -2,32 +2,50 @@ import requests
 from dotenv import load_dotenv
 import os
 
-# Load environment variables
-load_dotenv()
+def download_static_map(latitude, longitude, zoom=18, size="640x640", file_path="static_map.png"):
+    """
+    Downloads a static map image from Google Maps Static API.
 
-API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
-if not API_KEY:
-    raise ValueError("Google Maps API key not found. Set it in .env or pass explicitly.")
+    Args:
+        latitude (float): Latitude of the map center.
+        longitude (float): Longitude of the map center.
+        zoom (int): Zoom level.
+        size (str): Image size in 'WIDTHxHEIGHT' format.
+        map_type (str): Map type ('roadmap', 'satellite', 'terrain', 'hybrid').
+        file_path (str): Path to save the image.
+        api_key (str): Google Maps API key. If None, loads from environment variable.
 
-latitude = 26.856
-longitude = 81.050763
-zoom = 18
-size = "600x640"  # Width x Height in pixels (max: 640x640 for free tier)
-map_type = "satellite"  # roadmap, satellite, terrain, hybrid
+    Returns:
+        dict: Result with status, message, and file_path.
+    """
+    load_dotenv()
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
 
-# === Build URL ===
-url = (
-    f"https://maps.googleapis.com/maps/api/staticmap?"
-    f"center={latitude},{longitude}&zoom={zoom}&size={size}&maptype={map_type}&key={API_KEY}"
-)
+    if not api_key:
+        raise ValueError("Google Maps API key not found. Set it in .env or pass explicitly.")
 
-# === Download the image ===
-response = requests.get(url)
+    url = (
+        f"https://maps.googleapis.com/maps/api/staticmap?"
+        f"center={latitude},{longitude}&zoom={zoom}&size={size}&maptype={"satellite"}&key={api_key}"
+    )
 
-if response.status_code == 200:
-    with open("static_map.png", "wb") as f:
-        f.write(response.content)
-    print("✅ Map image saved as static_map.png")
-else:
-    print(f"❌ Failed to download map: {response.status_code}")
-    print(response.text)
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open(file_path, "wb") as f:
+            f.write(response.content)
+        return {
+            "status": "success",
+            "message": "Map image saved successfully.",
+            "file_path": file_path
+        }
+    else:
+        return {
+            "status": "error",
+            "message": f"Failed to download map: {response.status_code}",
+            "file_path": None
+        }
+
+
+result = download_static_map(25.5941, 85.1376, file_path="static_map.png")
+print(result)
+# This will download a static map centered at the specified latitude and longitude, save it as 'static_map.png', and print the result.

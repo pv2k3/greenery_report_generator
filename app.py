@@ -27,5 +27,4 @@ async def test():
 @app.post("/analyze-image/")
 async def analyze_image(request: Request, file: UploadFile = File(...)):
     
-    # This is where the code for analyzing the image would go this will take the image pass it to the model to analyze call a weather api pass both the data to the new ai step and then return a report on it and on its bases return a report 
-    pass
+    

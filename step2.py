@@ -39,7 +39,7 @@ class SeasonData:
 
 @dataclass
 class LandCoverageData:
-    plant_coverage: float
+    vegetation_coverage: float
     building_coverage: float
     road_coverage: float
     empty_land: float
@@ -188,7 +188,7 @@ class PlantRecommendationSystem:
             input_variables=[
                 "temperature", "humidity", "weather_description", "wind_speed", 
                 "precipitation", "feels_like", "uv_index", "visibility",
-                "plant_coverage", "building_coverage", "road_coverage", 
+                "vegetation_coverage", "building_coverage", "road_coverage", 
                 "empty_land", "water_body", "city", "country", "season", "planting_season"
             ],
             template="""
@@ -206,7 +206,7 @@ class PlantRecommendationSystem:
                 - Visibility: {visibility} km
 
                 Land Coverage:
-                - Plant Coverage: {plant_coverage}%
+                - Vegetation Coverage: {vegetation_coverage}%
                 - Building Coverage: {building_coverage}%
                 - Road Coverage: {road_coverage}%
                 - Empty Land Available: {empty_land}%
@@ -230,7 +230,7 @@ class PlantRecommendationSystem:
             return {"error": "Could not fetch weather data"}
 
         total_coverage = (
-            land_coverage.plant_coverage +
+            land_coverage.vegetation_coverage +
             land_coverage.building_coverage +
             land_coverage.road_coverage +
             land_coverage.empty_land +
@@ -255,7 +255,7 @@ class PlantRecommendationSystem:
             feels_like=weather_data.feels_like,
             uv_index=weather_data.uv_index,
             visibility=weather_data.visibility,
-            plant_coverage=land_coverage.plant_coverage,
+            vegetation_coverage=land_coverage.vegetation_coverage,
             building_coverage=land_coverage.building_coverage,
             road_coverage=land_coverage.road_coverage,
             empty_land=land_coverage.empty_land,
@@ -298,15 +298,15 @@ def generate_final_report(coverage_details: Dict) -> Dict:
 
     try:
         land_coverage = LandCoverageData(
-            plant_coverage=coverage_details.get("plant_coverage", 0.0),
+            vegetation_coverage=coverage_details.get("vegetation_coverage", 0.0),
             building_coverage=coverage_details.get("building_coverage", 0.0),
-            road_coverage=coverage_details.get("road", 0.0),
+            road_coverage=coverage_details.get("road_coverage", 0.0),
             empty_land=coverage_details.get("empty_land", 0.0),
             water_body=coverage_details.get("water_body", 0.0),
         )
 
         total_coverage = (
-            land_coverage.plant_coverage +
+            land_coverage.vegetation_coverage +
             land_coverage.building_coverage +
             land_coverage.road_coverage +
             land_coverage.empty_land +
@@ -344,13 +344,7 @@ def generate_final_report(coverage_details: Dict) -> Dict:
         }
 
 # # ✅ Example usage
-example_coverage_details = {
-    "plant_coverage": 27.0,
-    "building_coverage": 47.0,
-    "road": 11.0,
-    "empty_land": 15.0,
-    "water_body": 0
-}
+example_coverage_details = {'vegetation_coverage': 7.0, 'building_coverage': 72.0, 'road_coverage': 12.0, 'empty_land': 3.0, 'water_body': 6.0}
 
 generate_final_result = generate_final_report(example_coverage_details)
 print(generate_final_result)
