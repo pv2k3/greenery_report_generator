@@ -1,235 +1,51 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Coordinate Form</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        background-color: #f5f5f5;
-      }
-
-      .container {
-        max-width: 600px;
-        margin: 0 auto;
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      }
-
-      h2 {
-        color: #333;
-        text-align: center;
-        margin-bottom: 30px;
-      }
-
-      label {
-        display: block;
-        margin-top: 15px;
-        font-weight: bold;
-        color: #555;
-      }
-
-      input {
-        width: 100%;
-        padding: 12px;
-        margin-top: 5px;
-        box-sizing: border-box;
-        border: 2px solid #ddd;
-        border-radius: 5px;
-        font-size: 14px;
-      }
-
-      input:focus {
-        outline: none;
-        border-color: #4CAF50;
-      }
-
-      .button-group {
-        margin-top: 25px;
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-      }
-
-      button {
-        padding: 12px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-        transition: background-color 0.3s;
-      }
-
-      .btn-back {
-        background-color: #6c757d;
-        color: white;
-      }
-
-      .btn-back:hover {
-        background-color: #5a6268;
-      }
-
-      .btn-submit {
-        background-color: #4CAF50;
-        color: white;
-      }
-
-      .btn-submit:hover {
-        background-color: #45a049;
-      }
-
-      .info-box {
-        background-color: #e7f3ff;
-        border: 1px solid #b3d7ff;
-        border-radius: 5px;
-        padding: 15px;
-        margin-bottom: 20px;
-      }
-
-      .error-box {
-        background-color: #ffe7e7;
-        border: 1px solid #ffb3b3;
-        border-radius: 5px;
-        padding: 15px;
-        margin-bottom: 20px;
-        color: #d8000c;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h2>Coordinates Captured from Map</h2>
-      
-      <div id="info-message" class="info-box" style="display: none;"></div>
-      <div id="error-message" class="error-box" style="display: none;"></div>
-      
-      <form id="coordinateForm">
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form id="locationForm">
         <label for="latitude">Latitude</label>
-        <input type="text" id="latitude" name="latitude" readonly />
-
+        <input type="number" name="latitude" id="latitude" required>
+        
         <label for="longitude">Longitude</label>
-        <input type="text" id="longitude" name="longitude" readonly />
-
-        <label for="timestamp">Timestamp</label>
-        <input type="text" id="timestamp" name="timestamp" readonly />
-
-        <div class="button-group">
-          <button type="button" class="btn-back" onclick="goBack()">Go Back to Map</button>
-          <button type="button" class="btn-submit" onclick="analyzeLocation()">Analyze Location</button>
-        </div>
-      </form>
-    </div>
+        <input type="number" name="longitude" id="longitude" required>
+        
+        <button type="submit">Submit</button>
+    </form>
 
     <script>
-      // Function to get URL parameters
-      function getUrlParameter(name) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(name);
-      }
+        document.getElementById("locationForm").addEventListener("submit", async function(e) {
+            e.preventDefault(); // Prevents the default form submission
 
-      // Function to format timestamp
-      function formatTimestamp(timestamp) {
-        if (!timestamp) return '';
-        const date = new Date(parseInt(timestamp));
-        return date.toLocaleString();
-      }
+            const lng = document.getElementById("longitude").value;
+            const lat = document.getElementById("latitude").value;
 
-      // Load values from URL parameters
-      function loadCoordinates() {
-        const lat = getUrlParameter('lat');
-        const lng = getUrlParameter('lng');
-        const timestamp = getUrlParameter('timestamp');
+            console.log("latitude:", lat);
+            console.log("longitude:", lng);
 
-        if (lat && lng) {
-          // Fill form fields
-          document.getElementById('latitude').value = lat;
-          document.getElementById('longitude').value = lng;
-          document.getElementById('timestamp').value = formatTimestamp(timestamp);
+            const formData = new FormData();
+            formData.append("longitude", lng);
+            formData.append("latitude", lat);
 
-          // Show success message
-          const infoBox = document.getElementById('info-message');
-          infoBox.style.display = 'block';
-          infoBox.innerHTML = `<strong>Success!</strong> Coordinates received from map click.`;
-        } else {
-          // Show error message if no coordinates found
-          const errorBox = document.getElementById('error-message');
-          errorBox.style.display = 'block';
-          errorBox.innerHTML = '<strong>Error!</strong> No coordinates found. Please go back to the map and click on a location.';
-        }
-      }
+            try {
+                const response = await fetch("http://localhost:8000/analyze-location/", {
+                    method: "POST",
+                    body: formData
+                });
 
-      // Go back to map
-      function goBack() {
-        window.location.href = 'index.html';
-      }
+                if (!response.ok) {
+                    throw new Error("Failed to send request");
+                }
 
-      // Analyze location using FastAPI endpoint
-      async function analyzeLocation() {
-        const lat = document.getElementById('latitude').value;
-        const lng = document.getElementById('longitude').value;
-
-        if (!lat || !lng) {
-          alert('No coordinates to analyze. Please go back to the map and select a location.');
-          return;
-        }
-
-        // Show loading state
-        const submitButton = document.querySelector('.btn-submit');
-        const originalText = submitButton.textContent;
-        submitButton.textContent = 'Analyzing...';
-        submitButton.disabled = true;
-
-        try {
-          // Create FormData object
-          const formData = new FormData();
-          formData.append('latitude', lat);
-          formData.append('longitude', lng);
-
-          // Make fetch request to FastAPI endpoint
-          const response = await fetch('http://localhost:8000/analyze-location/', {
-            method: 'POST',
-            body: formData
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const result = await response.json();
-          
-          // Handle successful response
-          console.log('Analysis result:', result);
-          
-          // Show success message
-          const infoBox = document.getElementById('info-message');
-          infoBox.style.display = 'block';
-          infoBox.innerHTML = `<strong>Analysis Complete!</strong> Location analyzed successfully.`;
-          
-          // You can process the result here
-          // For example, redirect to results page or display analysis
-          // window.location.href = `results.html?data=${encodeURIComponent(JSON.stringify(result))}`;
-          
-        } catch (error) {
-          console.error('Error analyzing location:', error);
-          
-          // Show error message
-          const errorBox = document.getElementById('error-message');
-          errorBox.style.display = 'block';
-          errorBox.innerHTML = `<strong>Analysis Failed!</strong> ${error.message}`;
-          
-        } finally {
-          // Reset button state
-          submitButton.textContent = originalText;
-          submitButton.disabled = false;
-        }
-      }
-
-      // Load coordinates when page loads
-      window.onload = loadCoordinates;
+                const result = await response.json();
+                console.log(result);
+            } catch (error) {
+                console.error(error.message);
+            }
+        });
     </script>
-  </body>
-</html> 
+</body>
+</html>
