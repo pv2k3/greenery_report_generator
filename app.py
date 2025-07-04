@@ -57,6 +57,7 @@ async def analyze_location(request: Request, latitude: float = Form(...), longit
                 "file_path": map_result["file_path"]
             }
         final_report = generate_final_report(coverage_details["caption"])
+        print(final_report)
         return {
             "status": "success",
             "message": "Location analyzed successfully.",

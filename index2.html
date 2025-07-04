@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Analysis Results</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .header {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    
+    .header h1 {
+      margin: 0;
+      color: #333;
+    }
+    
+    .back-button {
+      background: #6c757d;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    
+    .back-button:hover {
+      background: #5a6268;
+    }
+    
+    .info-section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    
+    .info-section h2 {
+      margin-top: 0;
+      color: #333;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 10px;
+    }
+    
+    .location-info {
+      background: #e9ecef;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    
+    .location-info h3 {
+      margin: 0 0 10px 0;
+      color: #495057;
+    }
+    
+    .coord-display {
+      font-family: monospace;
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .timestamp {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .response-content {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 20px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 13px;
+      overflow-x: auto;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px;
+      border-radius: 4px;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .loading-message {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    .actions {
+      margin-top: 20px;
+      text-align: center;
+    }
+    
+    .action-button {
+      background: #007bff;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0 10px;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .action-button:hover {
+      background: #0056b3;
+    }
+    
+    .action-button.secondary {
+      background: #28a745;
+    }
+    
+    .action-button.secondary:hover {
+      background: #1e7e34;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Location Analysis Results</h1>
+      <a href="map.html" class="back-button">← Back to Map</a>
+    </div>
+    
+    <div id="content">
+      <div class="loading-message">
+        <p>Loading analysis results...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function getUrlParameter(name) {
+      name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+      const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+      const results = regex.exec(location.search);
+      return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    }
+
+    function formatTimestamp(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleString();
+    }
+
+    function displayAnalysis(analysisData) {
+      const contentDiv = document.getElementById('content');
+      
+      const html = `
+        <div class="info-section">
+          <h2>Location Information</h2>
+          <div class="location-info">
+            <h3>Coordinates</h3>
+            <div class="coord-display">
+              Latitude: ${analysisData.location.lat.toFixed(6)}<br>
+              Longitude: ${analysisData.location.lng.toFixed(6)}
+            </div>
+          </div>
+          <div class="timestamp">
+            Analysis performed: ${formatTimestamp(analysisData.timestamp)}
+          </div>
+        </div>
+        
+        <div class="info-section">
+          <h2>Analysis Results</h2>
+          <div class="response-content">${JSON.stringify(analysisData.data, null, 2)}</div>
+        </div>
+        
+        <div class="actions">
+          <a href="map.html" class="action-button">New Analysis</a>
+          <button onclick="downloadResults()" class="action-button secondary">Download Results</button>
+        </div>
+      `;
+      
+      contentDiv.innerHTML = html;
+    }
+
+    function displayError(message) {
+      const contentDiv = document.getElementById('content');
+      contentDiv.innerHTML = `
+        <div class="info-section">
+          <div class="error-message">
+            <strong>Error:</strong> ${message}
+          </div>
+          <div class="actions">
+            <a href="map.html" class="action-button">Go to Map</a>
+          </div>
+        </div>
+      `;
+    }
+
+    function downloadResults() {
+      const analysisId = getUrlParameter('id');
+      const analysisData = JSON.parse(localStorage.getItem(`analysis_${analysisId}`));
+      
+      if (analysisData) {
+        const dataStr = JSON.stringify(analysisData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `analysis_${analysisId}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    // Load and display analysis on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const analysisId = getUrlParameter('id');
+      
+      if (!analysisId) {
+        displayError('No analysis ID provided. Please start a new analysis from the map page.');
+        return;
+      }
+      
+      const analysisData = localStorage.getItem(`analysis_${analysisId}`);
+      
+      if (!analysisData) {
+        displayError('Analysis data not found. The data may have expired or been cleared.');
+        return;
+      }
+      
+      try {
+        const parsedData = JSON.parse(analysisData);
+        displayAnalysis(parsedData);
+      } catch (error) {
+        displayError('Failed to parse analysis data. The data may be corrupted.');
+      }
+    });
+  </script>
+</body>
+</html>

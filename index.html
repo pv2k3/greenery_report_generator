@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Google Map with Marker and Search</title>
+  <title>Map with Marker, Search, and Result Modal</title>
   <style>
     html, body {
       height: 100%;
@@ -24,21 +24,104 @@
       padding: 8px;
       font-size: 16px;
     }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.25);
+      text-align: center;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover {
+      color: black;
+    }
   </style>
 </head>
 <body>
+  <!-- Search Input -->
   <div id="search-box">
     <input id="autocomplete" type="text" placeholder="Search a location..." />
   </div>
+
+  <!-- Map Container -->
   <div id="map"></div>
+
+  <!-- Modal -->
+  <div id="resultModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h3>Analysis Result</h3>
+      <div id="modalBody">Loading...</div>
+    </div>
+  </div>
 
   <script>
     let map;
     let marker = null;
+    let infoWindow = null;
+
+    function openModal(content) {
+      document.getElementById("modalBody").innerText = content;
+      document.getElementById("resultModal").style.display = "block";
+    }
+
+    function closeModal() {
+      document.getElementById("resultModal").style.display = "none";
+    }
+
+    // Optional debug if reload happens
+    window.addEventListener('beforeunload', function () {
+      console.log("⚠️ Page is reloading!");
+    });
+
+    function sendToBackend(lat, lng) {
+      const formData = new FormData();
+      formData.append("latitude", lat);
+      formData.append("longitude", lng);
+
+      fetch("http://localhost:8000/analyze-location/", {
+        method: "POST",
+        body: formData,
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("✅ Backend response:", data);
+        openModal(JSON.stringify(data, null, 2));
+      })
+      .catch(error => {
+        console.error("❌ Error sending data:", error);
+        openModal("Error connecting to backend.");
+      });
+    }
 
     function initMap() {
       map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 28.6139, lng: 77.2090 }, // Example: New Delhi
+        center: { lat: 28.6139, lng: 77.2090 }, // New Delhi
         zoom: 12,
         mapTypeId: 'hybrid',
       });
@@ -47,50 +130,48 @@
       const autocomplete = new google.maps.places.Autocomplete(input);
       autocomplete.bindTo("bounds", map);
 
+      // Handle search selection
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
-
         if (!place.geometry || !place.geometry.location) {
-          console.log("No details available for input: '" + place.name + "'");
+          alert("No location data available.");
           return;
         }
 
-        // Move map to place
-        map.panTo(place.geometry.location);
-        map.setZoom(15);
-
-        // Add marker
-        if (marker) marker.setMap(null);
-        marker = new google.maps.Marker({
-          map: map,
-          position: place.geometry.location,
-          title: place.name
-        });
-
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
-        console.log(JSON.stringify({ latitude: lat, longitude: lng }, null, 2));
-        console.log(`Latitude: ${lat}\nLongitude: ${lng}`);
+
+        placeMarkerAndSend(lat, lng, place.name);
       });
 
+      // Handle map click
       map.addListener("click", (e) => {
         const lat = e.latLng.lat();
         const lng = e.latLng.lng();
-
-        if (marker) marker.setMap(null);
-
-        marker = new google.maps.Marker({
-          position: { lat, lng },
-          map,
-          title: `Lat: ${lat}, Lng: ${lng}`,
-        });
-
-        console.log(JSON.stringify({ latitude: lat, longitude: lng }, null, 2));
-        // alert(`Latitude: ${lat}\nLongitude: ${lng}`);
+        placeMarkerAndSend(lat, lng, `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
       });
+    }
+
+    function placeMarkerAndSend(lat, lng, label) {
+      if (marker) marker.setMap(null);
+      if (infoWindow) infoWindow.close();
+
+      marker = new google.maps.Marker({
+        position: { lat, lng },
+        map: map,
+        title: label,
+      });
+
+      infoWindow = new google.maps.InfoWindow({
+        content: `<b>${label}</b><br>Sending to backend...`,
+      });
+      infoWindow.open(map, marker);
+
+      sendToBackend(lat, lng);
     }
   </script>
 
+  <!-- Google Maps API -->
   <script async
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBypM89und4v-OKPB4EhMCuBou_YltmKi0&callback=initMap&libraries=places">
   </script>
