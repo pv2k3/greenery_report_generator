@@ -23,6 +23,8 @@
         border: 1px solid #ccc;
         display: none;
         z-index: 999;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       }
     </style>
     <script
@@ -46,18 +48,30 @@
 
           const divId = document.getElementById("show-result");
           divId.style.display = "block";
-          divId.innerHTML = `Map Click Event : LngLat(${lng}, ${lat})`;
+          divId.innerHTML = `Map Click Event : LngLat(${lng}, ${lat})<br>Redirecting...`;
 
-          // Store coordinates in localStorage
-          localStorage.setItem("clicked_lat", lat);
-          localStorage.setItem("clicked_lng", lng);
-
-          // Redirect to form.html
+          // Create URL with query parameters
+          const targetUrl = `form.html?lat=${lat}&lng=${lng}&timestamp=${Date.now()}`;
+          
+          // Alternative: redirect to a different page entirely
+          // const targetUrl = `location-details.html?latitude=${lat}&longitude=${lng}`;
+          
+          // Redirect with coordinates as query parameters
           setTimeout(() => {
-            window.location.href = "form.html";
+            window.location.href = targetUrl;
           }, 1000); // small delay so user sees the click
         });
       }
+
+      // Optional: Function to parse URL parameters on the destination page
+      function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+      }
+
+      // Example usage on the destination page:
+      // const lat = getUrlParameter('lat');
+      // const lng = getUrlParameter('lng');
     </script>
   </body>
 </html>
