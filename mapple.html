@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Map Click Event</title>
+    <meta name="viewport" content="initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body,
+      #map {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100vh;
+      }
+
+      #show-result {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: white;
+        padding: 10px;
+        border: 1px solid #ccc;
+        display: none;
+        z-index: 999;
+      }
+    </style>
+    <script
+      src="https://apis.mappls.com/advancedmaps/api/2e4a3ebca222b3d6e76c1b14f3a91faf/map_sdk?layer=vector&v=3.0&callback=initMap1"
+      defer
+      async
+    ></script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="show-result"></div>
+
+    <script>
+      var map;
+
+      function initMap1() {
+        map = new mappls.Map("map", {});
+        map.addListener("click", function (e) {
+          const lat = e.lngLat.lat;
+          const lng = e.lngLat.lng;
+
+          const divId = document.getElementById("show-result");
+          divId.style.display = "block";
+          divId.innerHTML = `Map Click Event : LngLat(${lng}, ${lat})`;
+
+          // Store coordinates in localStorage
+          localStorage.setItem("clicked_lat", lat);
+          localStorage.setItem("clicked_lng", lng);
+
+          // Redirect to form.html
+          setTimeout(() => {
+            window.location.href = "form.html";
+          }, 1000); // small delay so user sees the click
+        });
+      }
+    </script>
+  </body>
+</html>

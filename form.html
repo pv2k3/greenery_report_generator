@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Coordinate Form</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+
+      label {
+        display: block;
+        margin-top: 10px;
+      }
+
+      input {
+        width: 100%;
+        padding: 8px;
+        margin-top: 4px;
+        box-sizing: border-box;
+      }
+
+      button {
+        margin-top: 15px;
+        padding: 10px 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Coordinates Captured from Map</h2>
+    <form>
+      <label for="latitude">Latitude</label>
+      <input type="text" id="latitude" name="latitude" readonly />
+
+      <label for="longitude">Longitude</label>
+      <input type="text" id="longitude" name="longitude" readonly />
+
+      <button type="button" onclick="goBack()">Go Back to Map</button>
+    </form>
+
+    <script>
+      // Load values from localStorage
+      const lat = localStorage.getItem("clicked_lat");
+      const lng = localStorage.getItem("clicked_lng");
+
+      // Fill form fields
+      document.getElementById("latitude").value = lat || "";
+      document.getElementById("longitude").value = lng || "";
+
+      function goBack() {
+        window.location.href = "index.html";
+      }
+    </script>
+  </body>
+</html>
