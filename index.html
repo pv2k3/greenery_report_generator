@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Map with Marker and Search</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    #search-box {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      z-index: 5;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="search-box">
+    <input id="autocomplete" type="text" placeholder="Search a location..." />
+  </div>
+  <div id="map"></div>
+
+  <script>
+    let map;
+    let marker = null;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 28.6139, lng: 77.2090 }, // Example: New Delhi
+        zoom: 12,
+        mapTypeId: 'hybrid',
+      });
+
+      const input = document.getElementById("autocomplete");
+      const autocomplete = new google.maps.places.Autocomplete(input);
+      autocomplete.bindTo("bounds", map);
+
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+
+        if (!place.geometry || !place.geometry.location) {
+          console.log("No details available for input: '" + place.name + "'");
+          return;
+        }
+
+        // Move map to place
+        map.panTo(place.geometry.location);
+        map.setZoom(15);
+
+        // Add marker
+        if (marker) marker.setMap(null);
+        marker = new google.maps.Marker({
+          map: map,
+          position: place.geometry.location,
+          title: place.name
+        });
+
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        console.log(JSON.stringify({ latitude: lat, longitude: lng }, null, 2));
+        console.log(`Latitude: ${lat}\nLongitude: ${lng}`);
+      });
+
+      map.addListener("click", (e) => {
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
+
+        if (marker) marker.setMap(null);
+
+        marker = new google.maps.Marker({
+          position: { lat, lng },
+          map,
+          title: `Lat: ${lat}, Lng: ${lng}`,
+        });
+
+        console.log(JSON.stringify({ latitude: lat, longitude: lng }, null, 2));
+        // alert(`Latitude: ${lat}\nLongitude: ${lng}`);
+      });
+    }
+  </script>
+
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBypM89und4v-OKPB4EhMCuBou_YltmKi0&callback=initMap&libraries=places">
+  </script>
+</body>
+</html>
