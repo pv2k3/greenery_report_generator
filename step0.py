@@ -38,13 +38,17 @@ def download_static_map(latitude, longitude, zoom=19, size="640x640"):
         return {
             "status": "success",
             "message": "Map image saved successfully.",
-            "file_path": file_path
+            "file_path": file_path,
+            "latitude": latitude,
+            "longitude": longitude,
         }
     else:
         return {
             "status": "error",
             "message": f"Failed to download map: {response.status_code}",
-            "file_path": None
+            "file_path": None,
+            "latitude": latitude,
+            "longitude": longitude,
         }
 
 

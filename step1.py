@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+
+
 def get_mime_type(file_path):
     extension = file_path.lower().split('.')[-1]
     mime_types = {
@@ -58,7 +60,7 @@ def extract_json_from_caption(caption):
     except Exception as e:
         raise RuntimeError(f"Error extracting JSON: {e}")
 
-def generate_coverage_details(image_path="files/static_map.png"):
+def generate_coverage_details(image_path="files/static_map.png", latitude=None, longitude=None):
     prompt = """From this image, estimate the land coverage percentages and return the result in valid JSON format. The JSON must match the following schema:
 {
   "vegetation_coverage": float,

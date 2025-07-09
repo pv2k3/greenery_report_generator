@@ -224,61 +224,14 @@ class PlantRecommendationSystem:
         )
         self.parser = PlantRecommendationParser()
 
-    def get_plant_recommendations(self, city: str, land_coverage: LandCoverageData, country: str = "India") -> Dict:
-        weather_data = self.weather_service.get_weather_data(city)
-        if not weather_data:
-            return {"error": "Could not fetch weather data"}
-
-        total_coverage = (
-            land_coverage.vegetation_coverage +
-            land_coverage.building_coverage +
-            land_coverage.road_coverage +
-            land_coverage.empty_land +
-            land_coverage.water_body
-        )
-        if abs(total_coverage - 100) > 1:
-            return {"error": "Land coverage percentages must sum to 100%", "coverage": total_coverage}
-
-        # location
-
-        latitude, _ = SeasonService.get_location_coordinates(city, country)
-        season_data = SeasonService.determine_season(
-            weather_data.local_time, weather_data.timezone, latitude
-        )
-
-        prompt = self.prompt_template.format(
-            temperature=weather_data.temperature,
-            humidity=weather_data.humidity,
-            weather_description=weather_data.weather_description,
-            wind_speed=weather_data.wind_speed,
-            precipitation=weather_data.precipitation,
-            feels_like=weather_data.feels_like,
-            uv_index=weather_data.uv_index,
-            visibility=weather_data.visibility,
-            vegetation_coverage=land_coverage.vegetation_coverage,
-            building_coverage=land_coverage.building_coverage,
-            road_coverage=land_coverage.road_coverage,
-            empty_land=land_coverage.empty_land,
-            water_body=land_coverage.water_body,
-            city=city,
-            country=country,
-            season=season_data.season,
-            planting_season=season_data.planting_season
-        )
-
-        try:
-            response = self.model.generate_content(prompt)
-            parsed_result = self.parser.parse(response.text)
-            parsed_result['weather_data'] = weather_data.__dict__
-            parsed_result['land_coverage'] = land_coverage.__dict__
-            parsed_result['season'] = season_data.__dict__
-            parsed_result['location'] = {'city': city, 'country': country}
-            return parsed_result
-        except Exception as e:
-            return {"error": f"Error generating recommendations: {str(e)}"}
-
-# ✅ Final function with response format
-def generate_final_report(coverage_details: Dict) -> Dict:
+# ✅ Final function with lat/lng support
+def generate_final_report(
+    coverage_details: Dict,
+    city: str,
+    country: str ,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+) -> Dict:
     WEATHERAPI_KEY = os.getenv('WEATHERAPI_KEY')
     GEMINI_API_KEY = os.getenv('GOOGLE_API_KEY')
 
@@ -321,19 +274,59 @@ def generate_final_report(coverage_details: Dict) -> Dict:
             }
 
         plant_system = PlantRecommendationSystem(WEATHERAPI_KEY, GEMINI_API_KEY)
-        results = plant_system.get_plant_recommendations("Lucknow", land_coverage, "India")
 
-        if "error" in results:
+        weather_data = plant_system.weather_service.get_weather_data(city)
+        if not weather_data:
             return {
                 "status": "error",
-                "message": results["error"],
+                "message": "Failed to fetch weather data for the provided city.",
                 "response": None,
             }
+
+        if latitude is None:
+            latitude, _ = SeasonService.get_location_coordinates(city, country)
+
+        season_data = SeasonService.determine_season(
+            weather_data.local_time, weather_data.timezone, latitude, city, country
+        )
+
+        prompt = plant_system.prompt_template.format(
+            temperature=weather_data.temperature,
+            humidity=weather_data.humidity,
+            weather_description=weather_data.weather_description,
+            wind_speed=weather_data.wind_speed,
+            precipitation=weather_data.precipitation,
+            feels_like=weather_data.feels_like,
+            uv_index=weather_data.uv_index,
+            visibility=weather_data.visibility,
+            vegetation_coverage=land_coverage.vegetation_coverage,
+            building_coverage=land_coverage.building_coverage,
+            road_coverage=land_coverage.road_coverage,
+            empty_land=land_coverage.empty_land,
+            water_body=land_coverage.water_body,
+            city=city,
+            country=country,
+            season=season_data.season,
+            planting_season=season_data.planting_season
+        )
+
+        response = plant_system.model.generate_content(prompt)
+        parsed_result = plant_system.parser.parse(response.text)
+
+        parsed_result['weather_data'] = weather_data.__dict__
+        parsed_result['land_coverage'] = land_coverage.__dict__
+        parsed_result['season'] = season_data.__dict__
+        parsed_result['location'] = {
+            'city': city,
+            'country': country,
+            'latitude': latitude,
+            'longitude': longitude,
+        }
 
         return {
             "status": "success",
             "message": "Plant recommendations generated successfully.",
-            "response": results,
+            "response": parsed_result,
         }
 
     except Exception as e:
@@ -343,8 +336,20 @@ def generate_final_report(coverage_details: Dict) -> Dict:
             "response": None,
         }
 
-# # ✅ Example usage
-# example_coverage_details = {'vegetation_coverage': 7.0, 'building_coverage': 72.0, 'road_coverage': 12.0, 'empty_land': 3.0, 'water_body': 6.0}
+# Example usage (uncomment to run):
+# example_coverage = {
+#     'vegetation_coverage': 7.0,
+#     'building_coverage': 72.0,
+#     'road_coverage': 12.0,
+#     'empty_land': 3.0,
+#     'water_body': 6.0
+# }
 
-# generate_final_result = generate_final_report(example_coverage_details)
-# print(generate_final_result)
+# result = generate_final_report(
+#     coverage_details=example_coverage,
+#     city="Lucknow",
+#     country="India",
+#     latitude=26.8467,
+#     longitude=80.9462
+# )
+# print(result)
